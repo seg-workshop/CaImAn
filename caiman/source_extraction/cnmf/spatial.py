@@ -41,7 +41,8 @@ def update_spatial_components(Y, C=None, f=None, A_in=None, sn=None, dims=None,
                               ss=np.ones((3, 3), dtype=int), nb=1,
                               method_ls='lasso_lars', update_background_components=True,
                               low_rank_background=True, block_size_spat=1000,
-                              num_blocks_per_run_spat=20):
+                              num_blocks_per_run_spat=20, timeout=60*30):
+
     """update spatial footprints and background through Basis Pursuit Denoising
 
     for each pixel i solve the problem
@@ -214,7 +215,7 @@ def update_spatial_components(Y, C=None, f=None, A_in=None, sn=None, dims=None,
     if dview is not None:
         if 'multiprocessing' in str(type(dview)):
             parallel_result = dview.map_async(
-                regression_ipyparallel, pixel_groups).get(4294967)
+                regression_ipyparallel, pixel_groups).get(timeout)
         else:
             parallel_result = dview.map_sync(
                 regression_ipyparallel, pixel_groups)
@@ -439,7 +440,7 @@ def construct_ellipse_parallel(pars):
     return np.sqrt(np.sum([(dist_cm * V[:, k]) ** 2 / dkk[k] for k in range(len(dkk))], 0)) <= dist
 
 def threshold_components(A, dims, medw=None, thr_method='max', maxthr=0.1, nrgthr=0.9999, extract_cc=True,
-                         se=None, ss=None, dview=None) -> np.ndarray:
+                         se=None, ss=None, dview=None, timeout=10*60) -> np.ndarray:
     """
     Post-processing of spatial components which includes the following steps
 
@@ -502,7 +503,7 @@ def threshold_components(A, dims, medw=None, thr_method='max', maxthr=0.1, nrgth
     if dview is not None:
         if 'multiprocessing' in str(type(dview)):
             res = dview.map_async(
-                threshold_components_parallel, pars).get(4294967)
+                threshold_components_parallel, pars).get(timeout)
         else:
             res = dview.map_async(threshold_components_parallel, pars)
     else:
@@ -800,7 +801,8 @@ def test(Y, A_in, C, f, n_pixels_per_process, nb):
     return Y, A_in, C, f, n_pixels_per_process, nb, d, T
 
 def determine_search_location(A, dims, method='ellipse', min_size=3, max_size=8, dist=3,
-                              expandCore=iterate_structure(generate_binary_structure(2, 1), 2).astype(int), dview=None):
+                              expandCore=iterate_structure(generate_binary_structure(2, 1), 2).astype(int), dview=None, 
+                              timeout=10*60):
     """
     compute the indices of the distance from the cm to search for the spatial component
 
@@ -883,7 +885,7 @@ def determine_search_location(A, dims, method='ellipse', min_size=3, max_size=8,
             else:
                 if 'multiprocessing' in str(type(dview)):
                     res = dview.map_async(
-                        construct_ellipse_parallel, pars).get(4294967)
+                        construct_ellipse_parallel, pars).get(timeout)
                 else:
                     res = dview.map_sync(construct_ellipse_parallel, pars)
             for r in res:
@@ -925,7 +927,7 @@ def determine_search_location(A, dims, method='ellipse', min_size=3, max_size=8,
 
             if 'multiprocessing' in str(type(dview)):
                 parallel_result = dview.map_async(
-                    construct_dilate_parallel, pars).get(4294967)
+                    construct_dilate_parallel, pars).get(timeout)
             else:
                 parallel_result = dview.map_sync(
                     construct_dilate_parallel, pars)
@@ -1106,11 +1108,11 @@ def creatememmap(Y, Cf, dview):
            Exception 'Not implemented consistently'
            """
     if os.environ.get('SLURM_SUBMIT_DIR') is not None:
-        tmpf = os.environ.get('SLURM_SUBMIT_DIR')
-        print(f'cluster temporary folder: {tmpf}')
+        #tmpf = os.environ.get('SLURM_SUBMIT_DIR')
+        #print(f'cluster temporary folder: {tmpf}')
         #folder = tempfile.mkdtemp(dir=tmpf)
         folder = tempfile.mkdtemp()
-        print(f'Just kidding, used {folder}')
+        #print(f'Just kidding, used {folder}')
     else:
         folder = tempfile.mkdtemp()
 

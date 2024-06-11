@@ -1161,7 +1161,7 @@ class Estimates(object):
 
         return self
 
-    def deconvolve(self, params, dview=None, dff_flag=False):
+    def deconvolve(self, params, dview=None, dff_flag=False, timeout=30*60):
         ''' performs deconvolution on the estimated traces using the parameters
         specified in params. Deconvolution on detrended and normalized (DF/F)
         traces can be performed by setting dff_flag=True. In this case the
@@ -1193,7 +1193,7 @@ class Estimates(object):
 
         if 'multiprocessing' in str(type(dview)):
             results = dview.map_async(
-                constrained_foopsi_parallel, args_in).get(4294967)
+                constrained_foopsi_parallel, args_in).get(timeout)
         elif dview is not None:
             results = dview.map_sync(constrained_foopsi_parallel, args_in)
         else:
@@ -1222,7 +1222,7 @@ class Estimates(object):
 
                 if 'multiprocessing' in str(type(dview)):
                     results = dview.map_async(
-                        constrained_foopsi_parallel, args_in).get(4294967)
+                        constrained_foopsi_parallel, args_in).get(timeout)
                 elif dview is not None:
                     results = dview.map_sync(constrained_foopsi_parallel,
                                              args_in)
@@ -1235,7 +1235,7 @@ class Estimates(object):
                 self.S_dff = np.stack([results[1][i] for i in order])
 
     def merge_components(self, Y, params, mx=50, fast_merge=True,
-                         dview=None, max_merge_area=None):
+                         dview=None):
             """merges components
             """
             # FIXME This method shares its name with a function elsewhere in the codebase (which it wraps)
@@ -1247,8 +1247,7 @@ class Estimates(object):
                                  params.get_group('spatial'), dview=dview,
                                  bl=self.bl, c1=self.c1, sn=self.neurons_sn,
                                  g=self.g, thr=params.get('merging', 'merge_thr'), mx=mx,
-                                 fast_merge=fast_merge, merge_parallel=params.get('merging', 'merge_parallel'),
-                                 max_merge_area=max_merge_area)
+                                 fast_merge=fast_merge, merge_parallel=params.get('merging', 'merge_parallel'))
 
     def manual_merge(self, components, params):
         ''' merge a given list of components. The indices
