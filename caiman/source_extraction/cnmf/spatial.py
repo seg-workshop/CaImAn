@@ -1108,11 +1108,11 @@ def creatememmap(Y, Cf, dview):
            Exception 'Not implemented consistently'
            """
     if os.environ.get('SLURM_SUBMIT_DIR') is not None:
-        tmpf = os.environ.get('SLURM_SUBMIT_DIR')
-        print(f'cluster temporary folder: {tmpf}')
+        #tmpf = os.environ.get('SLURM_SUBMIT_DIR')
+        #print(f'cluster temporary folder: {tmpf}')
         #folder = tempfile.mkdtemp(dir=tmpf)
         folder = tempfile.mkdtemp()
-        print(f'Just kidding, used {folder}')
+        #print(f'Just kidding, used {folder}')
     else:
         folder = tempfile.mkdtemp()
 
